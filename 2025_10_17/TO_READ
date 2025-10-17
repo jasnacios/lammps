@@ -1,0 +1,21 @@
+This folder contains all the modifications I made on Lammps src. 
+
+ATOM:
+
+I modified atom.cpp in order to add new properties to the atoms (to handle self-propulation and learning).  . 
+atom_vec_polar2D is an atom style that eases the work in 2D. 
+atom_vec_learner is an atom style that enables social learning.
+atom_vec_sap is an atom style that considers self propulsion, rotational diffusion and self alignment.
+
+FIX:
+
+fix_robot_learning initializes scores and parameters, then performs the social learning.
+fix_controler links the active force to the sensors and weigths.
+fix_self_alignment adds active force and active torque.
+fix_selfbrownian2D adds diffusion and realizes the time integration
+
+COMPUTE:
+
+compute_poidsnn_atom is a function that returns a matrix with all the weights of the differents particles. It can be called in a dump_custom.  
+
+
