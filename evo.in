@@ -1,0 +1,117 @@
+# ----------------------------------------
+#     test_evo.run
+# ----------------------------------------
+#
+# Simulation de 1300 particules browniennes actives apprenant à réaliser une tâche
+# de phototaxie dans une boite de longueur 200 et de largeur 100. La boite est divisée
+# en deux zones: une zone lumineuse x \in [-25, 25], une zone ombragée: tout le reste.
+# Les particules subissent une première évolution sans apprentissage avec intensité du
+# potentiel de LJ croissant. Puis on active le learning. Les positions initiales sont tirées
+# aléatoriement dans la zone ombragée. 
+#
+# On produit un fichier .cfg exploitable par Ovito pour visualiser la tâche. 
+# On produit également un fichier .txt avec la valeur de x, y, qreward et pnn0
+# pour exploitation via python. 
+#
+
+# ------------------------------------------
+# PARAMETRES 
+# ------------------------------------------
+
+variable    d equal 1 # Taille des particules
+variable	N equal 64 # Number of particles
+variable 	l equal  3.8 # Halfbox length
+variable    L equal 15
+variable    c equal 8
+variable	runtime_Main equal 14400000	# Runtime in timesteps
+variable	dump_freq equal 1000	# Data dumping frequency
+variable	dt equal 0.001
+variable    num_controller equal 4
+
+variable    comm_radius equal 1.25
+variable    alpha equal 1000.0
+
+variable    gamma_t equal 1.0
+variable    gamma_r equal 1.0
+variable    Dt equal 0.0
+
+
+variable    Nn equal 8
+
+# --------------------------------------------
+# DÉFINITION DES DIFFÉRENTES RÉGIONS: 
+# BOITE DE SIMU, ZONE INITIALE, ZONE LUMINEUSE 
+# --------------------------------------------
+
+
+# boite carrée, lumière=cylindre
+region          full_box block -$L $L -$L $L -0.2 0.2 units box
+region          light cylinder z 0.0 0.0 $l -10 10 units box
+
+
+#si on veut départ dans l'ombre 
+region          init1 block -$L -$c -$L $L -0.2 0.2
+region          init2 block $c $L -$L $L -0.2 0.2
+region          init3 block -$L $L -$L -$c -0.2 0.2
+region          init4 block -$L $L $c $L -0.2 0.2
+region          init union 4 init1 init2 init3 init4
+
+
+variable	    WCA_cut equal 1.122
+variable 	    runtime_Soft equal 50000
+
+# ----------------------------------
+# UNITES, DIMENSION, ATOME ET BOITE
+# ---------------------------------
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      hybrid sphere polar2D learner sap
+create_box      1 full_box
+timestep        ${dt}
+
+# -----------------------------------------------------------------------------
+# PERFORM A SHORT BROWNIAN MOTION WITH A REPULSIVE POTENTIAL GRADUALLY 
+# INCREASING FROM ZERO THIS STEP IS MADE TO REMOVE OVERLAPS BEFORE THE MAIN RUN
+# -----------------------------------------------------------------------------
+
+#set up equilibration run: add particles randomly to box with soft potential.
+pair_style      soft ${WCA_cut}
+pair_coeff      * * 0.0
+variable        prefactor equal ramp(0,100) # strength of soft potential is increase slowly over time
+create_atoms	1 random ${N} ${Seed} init # adding N particles randomly to the entire simulation box
+set             type * diameter 1.0
+
+fix             1 all brownian 0.0001 ${Seed} gamma_t 1.0 #run a passive brownian to remove overlaps
+fix             2 all adapt 1 pair soft a * * v_prefactor
+thermo		    10000
+run             ${runtime_Soft}
+unfix		    1
+unfix           2
+
+
+reset_timestep	0 
+
+# -----------------------------------------------------------------------------
+# MAIN RUN: ACTIVE BROWNIAN PARTICLES LEARNING TO PERFORM PHOTOTAXIS
+# -----------------------------------------------------------------------------
+
+# Set up main run: change particle interactions to  WCA.
+pair_style	    lj/cut ${WCA_cut} 
+pair_modify	    shift yes #shifts LJ to become WCA
+pair_coeff	    * * 1 1.0 ${WCA_cut}  #Cutoff LJ at minima to become WCA
+
+fix             1 all robot_learning ${alphaq} ${Dp} light light ${comm_radius} ${alpha} ${Nn} ${Seed} 
+fix             2 all controler ${num_controller}
+fix             3 all self_alignment
+fix             4 all SelfBrownian2D ${gamma_t} ${gamma_r} ${Dt}  ${Seed}
+
+
+compute         cNN all poidsnn/atom ${Nn}
+
+dump            dNN all custom ${dump_freq} dumpnn_${Dp}_${alphaq}_${Seed}.txt id c_cNN[*]
+dump_modify     dNN sort id
+dump            tj all custom ${dump_freq} Evolopti_${N}_${num_controller}_${alphaq}_${Dp}_${Seed}.cfg id x y vx vy ang2D qreward poidsnn0 poidsnn1 poidsnn2 poidsnn3 poidsnn4 poidsnn4 poidsnn5 poidsnn6 poidsnn7
+run             ${runtime_Main}
+ 
