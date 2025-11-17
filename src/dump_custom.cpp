@@ -29,6 +29,7 @@
 #include "region.h"
 #include "update.h"
 #include "variable.h"
+#include "fmt/format.h"
 
 #include <cstring>
 
@@ -37,12 +38,13 @@ using namespace LAMMPS_NS;
 // customize by adding keyword
 // also customize compute_property_atom.cpp
 
-enum{ID,MOL,PROC,PROCP1,TYPE,TYPELABEL,ELEMENT,MASS,
+enum{ID,MOL,PROC,PROCP1,TYPE,TYPELABEL,ELEMENT,MASS, 
      X,Y,Z,XS,YS,ZS,XSTRI,YSTRI,ZSTRI,XU,YU,ZU,XUTRI,YUTRI,ZUTRI,
      XSU,YSU,ZSU,XSUTRI,YSUTRI,ZSUTRI,
      IX,IY,IZ,
      VX,VY,VZ,FX,FY,FZ,
      Q,MUX,MUY,MUZ,MU,RADIUS,DIAMETER,
+     ANG2D, QREWARD, POIDSNN0,POIDSNN1,POIDSNN2, POIDSNN3, POIDSNN4, POIDSNN5, POIDSNN6, POIDSNN7, 
      OMEGAX,OMEGAY,OMEGAZ,ANGMOMX,ANGMOMY,ANGMOMZ,
      TQX,TQY,TQZ,
      COMPUTE,FIX,VARIABLE,IVEC,DVEC,IARRAY,DARRAY};
@@ -647,21 +649,21 @@ void DumpCustom::header_item(bigint ndump)
 {
   if (unit_flag && !unit_count) {
     ++unit_count;
-    utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
+   utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
   }
   if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
 
-  utils::print(fp,"ITEM: TIMESTEP\n{}\n"
+ utils::print(fp,"ITEM: TIMESTEP\n{}\n"
              "ITEM: NUMBER OF ATOMS\n{}\n",
-             update->ntimestep, ndump);
+              update->ntimestep, ndump);
 
   utils::print(fp,"ITEM: BOX BOUNDS {}\n"
-             "{:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e}\n",
-             boundstr,boxxlo,boxxhi,boxylo,boxyhi,boxzlo,boxzhi);
+            "{:>1.16e} {:>1.16e}\n"
+            "{:>1.16e} {:>1.16e}\n"
+            "{:>1.16e} {:>1.16e}\n",
+            boundstr,boxxlo,boxxhi,boxylo,boxyhi,boxzlo,boxzhi);
 
-  utils::print(fp,"ITEM: ATOMS {}\n",columns);
+ utils::print(fp,"ITEM: ATOMS {}\n",columns);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -675,13 +677,13 @@ void DumpCustom::header_item_triclinic(bigint ndump)
   if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
 
   utils::print(fp,"ITEM: TIMESTEP\n{}\n"
-             "ITEM: NUMBER OF ATOMS\n{}\n",
-             update->ntimestep, ndump);
+              "ITEM: NUMBER OF ATOMS\n{}\n",
+              update->ntimestep, ndump);
 
   utils::print(fp,"ITEM: BOX BOUNDS xy xz yz {}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e}\n",
+            "{:>1.16e} {:>1.16e} {:>1.16e}\n"
+            "{:>1.16e} {:>1.16e} {:>1.16e}\n"
+            "{:>1.16e} {:>1.16e} {:>1.16e}\n",
              boundstr,boxxlo,boxxhi,boxxy,boxylo,boxyhi,boxxz,boxzlo,boxzhi,boxyz);
 
   utils::print(fp,"ITEM: ATOMS {}\n",columns);
@@ -691,24 +693,24 @@ void DumpCustom::header_item_triclinic(bigint ndump)
 
 void DumpCustom::header_item_triclinic_general(bigint ndump)
 {
-  if (unit_flag && !unit_count) {
-    ++unit_count;
-    utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
-  }
-  if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
+  // if (unit_flag && !unit_count) {
+    // ++unit_count;
+    // utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
+  // }
+  // if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
 
-  utils::print(fp,"ITEM: TIMESTEP\n{}\nITEM: NUMBER OF ATOMS\n{}\n", update->ntimestep, ndump);
+  // utils::print(fp,"ITEM: TIMESTEP\n{}\nITEM: NUMBER OF ATOMS\n{}\n", update->ntimestep, ndump);
 
-  utils::print(fp,"ITEM: BOX BOUNDS abc origin {}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n"
-             "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n",
-             boundstr,
-             domain->avec[0],domain->avec[1],domain->avec[2],domain->boxlo[0],
-             domain->bvec[0],domain->bvec[1],domain->bvec[2],domain->boxlo[1],
-             domain->cvec[0],domain->cvec[1],domain->cvec[2],domain->boxlo[2]);
+ //  utils::print(fp,"ITEM: BOX BOUNDS abc origin {}\n"
+           //   "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n"
+            //  "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n"
+             // "{:>1.16e} {:>1.16e} {:>1.16e} {:>1.16e}\n",
+             // boundstr,
+             // domain->avec[0],domain->avec[1],domain->avec[2],domain->boxlo[0],
+             // domain->bvec[0],domain->bvec[1],domain->bvec[2],domain->boxlo[1],
+            //  domain->cvec[0],domain->cvec[1],domain->cvec[2],domain->boxlo[2]);
 
-  utils::print(fp,"ITEM: ATOMS {}\n",columns);
+  // utils::print(fp,"ITEM: ATOMS {}\n",columns);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -840,11 +842,45 @@ int DumpCustom::count()
           ptr = dchoose;
           nstride = 1;
         }
+      } else if (thresh_array[ithresh] == ANG2D) {
+        if (!atom->ang2D_flag)
+          error->all(FLERR,"Threshold for an atom property that isn't allocated");
+        ptr = atom->ang2D;
+        nstride = 1; 
+      } else if (thresh_array[ithresh] == QREWARD) {
+        if (!atom->qreward_flag)
+          error->all(FLERR,"Threshold for an atom property that isn't allocated");
+        ptr = atom->qreward;
+        nstride = 1; 
+      } else if (thresh_array[ithresh] == POIDSNN0) {
+        ptr = &atom->poidsnn[0][0];
+        nstride = 8; 
+      }else if (thresh_array[ithresh] == POIDSNN1) {
+        ptr = &atom->poidsnn[0][1];
+        nstride = 8;
+      }else if (thresh_array[ithresh] == POIDSNN2) {
+        ptr = &atom->poidsnn[0][2];
+        nstride = 8; 
+      }else if (thresh_array[ithresh] == POIDSNN3) {
+        ptr = &atom->poidsnn[0][3];
+        nstride = 8; 
+      }else if (thresh_array[ithresh] == POIDSNN4) {
+        ptr = &atom->poidsnn[0][4];
+        nstride =  8;
+      }else if (thresh_array[ithresh] == POIDSNN5) {
+        ptr = &atom->poidsnn[0][5];
+        nstride =  8;
+      }else if (thresh_array[ithresh] == POIDSNN6) {
+        ptr = &atom->poidsnn[0][6];
+        nstride =  8;
+      }else if (thresh_array[ithresh] == POIDSNN7) {
+        ptr = &atom->poidsnn[0][7];
+        nstride = 8;
 
-      } else if (thresh_array[ithresh] == X) {
+      }else if (thresh_array[ithresh] == X) {
         ptr = &atom->x[0][0];
         nstride = 3;
-      } else if (thresh_array[ithresh] == Y) {
+      }else if (thresh_array[ithresh] == Y) {
         ptr = &atom->x[0][1];
         nstride = 3;
       } else if (thresh_array[ithresh] == Z) {
@@ -1463,7 +1499,37 @@ int DumpCustom::parse_fields(int narg, char **arg)
     } else if (strcmp(arg[iarg],"mass") == 0) {
       pack_choice[iarg] = &DumpCustom::pack_mass;
       vtype[iarg] = Dump::DOUBLE;
-
+    
+    } else if (strcmp(arg[iarg],"ang2D") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_ang2D;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"qreward") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_qreward;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn0") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn0;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn1") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn1;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn2") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn2;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn3") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn3;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn4") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn4;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn5") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn5;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn6") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn6;
+      vtype[iarg] = Dump::DOUBLE;
+    } else if (strcmp(arg[iarg],"poidsnn7") == 0){
+      pack_choice[iarg] = &DumpCustom::pack_poidsnn7;
+      vtype[iarg] = Dump::DOUBLE;
     } else if (strcmp(arg[iarg],"x") == 0) {
       pack_choice[iarg] = &DumpCustom::pack_x;
       vtype[iarg] = Dump::DOUBLE;
@@ -1996,6 +2062,17 @@ int DumpCustom::modify_param(int narg, char **arg)
     else if (strcmp(arg[1],"type") == 0) thresh_array[nthresh] = TYPE;
     else if (strcmp(arg[1],"mass") == 0) thresh_array[nthresh] = MASS;
 
+    else if (strcmp(arg[1],"ang2D") == 0) thresh_array[nthresh] = ANG2D;
+    else if (strcmp(arg[1],"qreward") == 0) thresh_array[nthresh] = QREWARD;
+    else if (strcmp(arg[1],"poidsnn0") == 0) thresh_array[nthresh] = POIDSNN0;
+    else if (strcmp(arg[1],"poidsnn1") == 0) thresh_array[nthresh] = POIDSNN1;
+    else if (strcmp(arg[1],"poidsnn2") == 0) thresh_array[nthresh] = POIDSNN2;
+    else if (strcmp(arg[1],"poidsnn3") == 0) thresh_array[nthresh] = POIDSNN3;
+    else if (strcmp(arg[1],"poidsnn4") == 0) thresh_array[nthresh] = POIDSNN4;
+    else if (strcmp(arg[1],"poidsnn5") == 0) thresh_array[nthresh] = POIDSNN5;
+    else if (strcmp(arg[1],"poidsnn6") == 0) thresh_array[nthresh] = POIDSNN6;
+    else if (strcmp(arg[1],"poidsnn7") == 0) thresh_array[nthresh] = POIDSNN7;
+
     else if (strcmp(arg[1],"x") == 0) thresh_array[nthresh] = X;
     else if (strcmp(arg[1],"y") == 0) thresh_array[nthresh] = Y;
     else if (strcmp(arg[1],"z") == 0) thresh_array[nthresh] = Z;
@@ -2220,7 +2297,7 @@ int DumpCustom::modify_param(int narg, char **arg)
 
       std::string threshid = fmt::format("{}{}_DUMP_STORE",id,nthreshlast);
       thresh_fixID[nthreshlast] = utils::strdup(threshid);
-      threshid += fmt::format(" {} STORE/ATOM 1 0 0 1", group->names[igroup]);
+      threshid += fmt::format(" {} STORE/ATOM 1 0 0 1", std::string(group->names[igroup]));
       thresh_fix[nthreshlast] = dynamic_cast<FixStoreAtom *>(modify->add_fix(threshid));
 
       thresh_last[nthreshlast] = nthreshlast;
@@ -2426,6 +2503,97 @@ void DumpCustom::pack_mass(int n)
 }
 
 /* ---------------------------------------------------------------------- */
+void DumpCustom::pack_ang2D(int n)
+{
+  double *ang2D = atom->ang2D;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = ang2D[clist[i]];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_qreward(int n)
+{
+  double *qreward = atom->qreward;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = qreward[clist[i]];
+    n += size_one;
+  }
+}
+
+void DumpCustom::pack_poidsnn0(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][0];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn1(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][1];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn2(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][2];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn3(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][3];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn4(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][4];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn5(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][5];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn6(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][6];
+    n += size_one;
+  }
+}
+void DumpCustom::pack_poidsnn7(int n)
+{
+  double **poidsnn = atom->poidsnn;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = poidsnn[clist[i]][7];
+    n += size_one;
+  }
+}
 
 void DumpCustom::pack_x(int n)
 {
@@ -2436,6 +2604,7 @@ void DumpCustom::pack_x(int n)
     n += size_one;
   }
 }
+
 
 /* ---------------------------------------------------------------------- */
 

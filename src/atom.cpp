@@ -14,7 +14,7 @@
 
 #include "atom.h"
 #include "atom_vec.h"
-#include "style_atom.h"  // IWYU pragma: keep
+#include "style_atom.h"
 
 #include "comm.h"
 #include "compute.h"
@@ -119,6 +119,16 @@ Atom::Atom(LAMMPS *_lmp) : Pointers(_lmp), atom_style(nullptr), avec(nullptr), a
 
   q = nullptr;
   mu = nullptr;
+
+  //new variables
+  poidsnn = nullptr;
+  qreward = nullptr;
+  lightintensity = nullptr;
+  ang2D = nullptr;
+  ztorque = nullptr;
+  Dr = nullptr;
+  Fa = nullptr;
+  zeta = nullptr;
 
   // finite-size particles
 
@@ -419,7 +429,18 @@ void Atom::peratom_create()
   add_peratom("rmass",&rmass,DOUBLE,0);
   add_peratom("q",&q,DOUBLE,0);
   add_peratom("mu",&mu,DOUBLE,4);
-  add_peratom("mu3",&mu,DOUBLE,3);     // just first 3 values of mu[4]
+  add_peratom("mu3",&mu,DOUBLE,3);    // just first 3 values of mu[4]
+  //new variables
+  add_peratom("ang2D",&ang2D,DOUBLE,0);
+  add_peratom("ztorque",&ztorque,DOUBLE,0);
+
+  add_peratom("qreward",&qreward,DOUBLE,0); 
+  add_peratom("lightintensity",&lightintensity,DOUBLE,0);
+  add_peratom("poidsnn",&poidsnn,DOUBLE,100); 
+
+  add_peratom("Dr",&Dr,DOUBLE,0);
+  add_peratom("Fa",&Fa,DOUBLE,0);
+  add_peratom("zeta",&zeta,DOUBLE,0);
 
   // finite size particles
 
@@ -644,6 +665,11 @@ void Atom::set_atomflag_defaults()
   wavepacket_flag = sph_flag = 0;
   molecule_flag = molindex_flag = molatom_flag = 0;
   q_flag = mu_flag = 0;
+  //new variables
+  qreward_flag = poidsnn_flag = lightintensity_flag = 0;
+  ang2D_flag = ztorque_flag = 0;
+  Dr_flag = Fa_flag = zeta_flag = 0;
+  //
   rmass_flag = radius_flag = omega_flag = torque_flag = angmom_flag = 0;
   temperature_flag = heatflow_flag = 0;
   vfrac_flag = spin_flag = eradius_flag = ervel_flag = erforce_flag = 0;
@@ -3036,6 +3062,17 @@ void *Atom::extract(const char *name)
   if (strcmp(name,"molecule") == 0) return (void *) molecule;
   if (strcmp(name,"q") == 0) return (void *) q;
   if (strcmp(name,"mu") == 0) return (void *) mu;
+  //new variables
+  if (strcmp(name,"poidsnn") == 0) return (void *) poidsnn;
+  if (strcmp(name,"qreward") == 0) return (void *) qreward;
+  if (strcmp(name,"lightintensity") == 0) return (void *) lightintensity; 
+  if (strcmp(name,"ang2D") == 0) return (void *) ang2D;
+  if (strcmp(name,"ztorque") == 0) return (void *) ztorque;
+  if (strcmp(name,"Dr") == 0) return (void *) Dr;
+  if (strcmp(name,"Fa") == 0) return (void *) Fa;
+  if (strcmp(name,"zeta") == 0) return (void *) zeta;
+  
+  //
   if (strcmp(name,"omega") == 0) return (void *) omega;
   if (strcmp(name,"angmom") == 0) return (void *) angmom;
   if (strcmp(name,"torque") == 0) return (void *) torque;
@@ -3173,6 +3210,16 @@ int Atom::extract_datatype(const char *name)
   if (strcmp(name,"molecule") == 0) return LAMMPS_TAGINT;
   if (strcmp(name,"q") == 0) return LAMMPS_DOUBLE;
   if (strcmp(name,"mu") == 0) return LAMMPS_DOUBLE_2D;
+  //new variables
+  if (strcmp(name,"qreward") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"Dr") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"Fa") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"zeta") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"lightintensity") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"ang2D") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"ztorque") == 0) return LAMMPS_DOUBLE;
+  if (strcmp(name,"poidsnn") == 0) return LAMMPS_DOUBLE_2D;
+  //
   if (strcmp(name,"omega") == 0) return LAMMPS_DOUBLE_2D;
   if (strcmp(name,"angmom") == 0) return LAMMPS_DOUBLE_2D;
   if (strcmp(name,"torque") == 0) return LAMMPS_DOUBLE_2D;
@@ -3306,6 +3353,7 @@ int Atom::extract_size(const char *name, int type)
       }
       if (strcmp(name,"f") == 0) return nall;
       if (strcmp(name,"mu") == 0) return nall;
+      if (strcmp(name,"poidsnn") == 0) return nall;
       if (strcmp(name,"omega") == 0) {
         if (ghost_vel) return nall;
         else return nlocal;
@@ -3354,6 +3402,7 @@ int Atom::extract_size(const char *name, int type)
       if (strcmp(name,"v") == 0) return 3;
       if (strcmp(name,"f") == 0) return 3;
       if (strcmp(name,"mu") == 0) return 4;
+      if (strcmp(name,"poidsnn") == 0) return 100;
       if (strcmp(name,"omega") == 0) return 3;
       if (strcmp(name,"angmom") == 0) return 3;
       if (strcmp(name,"torque") == 0) return 3;

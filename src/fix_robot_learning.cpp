@@ -35,8 +35,8 @@ Fix(lmp, narg, arg)
   region1 = domain->get_region_by_id(arg[6]);
   comm_radius = utils::numeric(FLERR,arg[7],false,lmp);
   alpha = utils::numeric(FLERR,arg[8],false,lmp);
-
-  seed = utils::numeric(FLERR,arg[9],false,lmp);
+  Nn = utils::numeric(FLERR,arg[9],false,lmp);
+  seed = utils::numeric(FLERR,arg[10],false,lmp);
   
   random = new RanMars(lmp, seed + comm->me);
 
@@ -83,6 +83,7 @@ void FixRobotLearning::post_force(int vflag)
   int *ilist, *jlist, *numneigh, **firstneigh;
 
   double **poidsnn = atom->poidsnn;
+  double *ztorque = atom->ztorque;
   double *qreward = atom->qreward;
   double *lightintensity = atom->lightintensity;
 
@@ -102,33 +103,13 @@ void FixRobotLearning::post_force(int vflag)
  
   
   if (step < 1) {
-    for (int i = 0; i < nlocal; i++){   
-
-  
-      qreward[i] = 0.0;
-      // poidsnn[i][0] = 0.0;
-
-      //if (i%2 == 0) {
-        //poidsnn[i][0] = 1.0 ;
-      //} else {
-        //poidsnn[i][0] = 0.0;
-     //}
-
-      poidsnn[i][0] = random->uniform();
-      poidsnn[i][1] = random->uniform();
-      poidsnn[i][2] = random->uniform(); 
-      poidsnn[i][3] = random->uniform();
-      poidsnn[i][4] = random->uniform();
-      poidsnn[i][5] = random->uniform();
-      poidsnn[i][6] = random->uniform();
-      poidsnn[i][7] = random->uniform();
-
-       }
+    for (int i = 0; i < nlocal; i++) {
+    qreward[i] = 0.0;
+    // ztorque[i] = 0.0;
+    for (int k = 0; k < Nn; k++){
+      poidsnn[i][k] = random->uniform();}}
   }
   if (step >= 1) {
-    
-      // loop over neighbors of my atoms
-    
     for (ii = 0; ii < inum; ii++) {
       i = ilist[ii];
       xtmp = x[i][0];
@@ -137,7 +118,7 @@ void FixRobotLearning::post_force(int vflag)
         
       jlist = firstneigh[i];
       jnum = numneigh[i];
-    
+
       for (jj = 0; jj < jnum; jj++) {
         j = jlist[jj];
         j &= NEIGHMASK;
@@ -149,76 +130,38 @@ void FixRobotLearning::post_force(int vflag)
           
         if(rsq == 0) continue;
         if (rsq < comm_radius) {
-          if (qreward[i] > qreward[j]) {
+          if (qreward[i] > qreward[j] ) {
               qreward[j] += alpha*(qreward[i] - qreward[j])*dt;
-              poidsnn[j][0] += alpha*(poidsnn[i][0] - poidsnn[j][0])*dt;
-              poidsnn[j][1] += alpha*(poidsnn[i][1] - poidsnn[j][1])*dt;
-              poidsnn[j][2] += alpha*(poidsnn[i][2] - poidsnn[j][2])*dt;  
-              poidsnn[j][3] += alpha*(poidsnn[i][3] - poidsnn[j][3])*dt;
-              poidsnn[j][4] += alpha*(poidsnn[i][4] - poidsnn[j][4])*dt;
-              poidsnn[j][5] += alpha*(poidsnn[i][5] - poidsnn[j][5])*dt;
-              poidsnn[j][6] += alpha*(poidsnn[i][6] - poidsnn[j][6])*dt;
-              poidsnn[j][7] += alpha*(poidsnn[i][7] - poidsnn[j][7])*dt;
+              for (int k = 0; k<Nn; k++) {
+                poidsnn[j][k] += alpha*(poidsnn[i][k] - poidsnn[j][k])*dt;
+              }
             }
           if (qreward[i] < qreward[j]) {
               qreward[i] += alpha*(qreward[j] - qreward[i])*dt;
-              poidsnn[i][0] += alpha*(poidsnn[j][0] - poidsnn[i][0])*dt;
-              poidsnn[i][1] += alpha*(poidsnn[j][1] - poidsnn[i][1])*dt;
-              poidsnn[i][2] += alpha*(poidsnn[j][2] - poidsnn[i][2])*dt;  
-              poidsnn[i][3] += alpha*(poidsnn[j][3] - poidsnn[i][3])*dt;
-              poidsnn[i][4] += alpha*(poidsnn[j][4] - poidsnn[i][4])*dt;
-              poidsnn[i][5] += alpha*(poidsnn[j][5] - poidsnn[i][5])*dt;
-              poidsnn[i][6] += alpha*(poidsnn[j][6] - poidsnn[i][6])*dt;
-              poidsnn[i][7] += alpha*(poidsnn[j][7] - poidsnn[i][7])*dt;
+              for (int k = 0; k<Nn; k++) {
+                poidsnn[i][k] += alpha*(poidsnn[j][k] - poidsnn[i][k])*dt;
+              }
             }
-           
           }
         }
       }
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
-        
-        poidsnn[i][0] += random->gaussian() * sqrt(2*dt*Dp); 
-        poidsnn[i][1] += random->gaussian() * sqrt(2*dt*Dp); 
-        poidsnn[i][2] += random->gaussian() * sqrt(2*dt*Dp);
-        poidsnn[i][3] += random->gaussian() * sqrt(2*dt*Dp);
-        poidsnn[i][4] += random->gaussian() * sqrt(2*dt*Dp);
-        poidsnn[i][5] += random->gaussian() * sqrt(2*dt*Dp);
-        poidsnn[i][6] += random->gaussian() * sqrt(2*dt*Dp);
-        poidsnn[i][7] += random->gaussian() * sqrt(2*dt*Dp);
-
-        // Clamp values to 0 and 1
-        if(poidsnn[i][0] > 1.0) poidsnn[i][0] = 2 - poidsnn[i][0];
-        if(poidsnn[i][0] < 0.0) poidsnn[i][0] = - poidsnn[i][0];
-      
-        if(poidsnn[i][1] > 1.0) poidsnn[i][1] = 2 - poidsnn[i][1];
-        if(poidsnn[i][1] < 0.0) poidsnn[i][1] = - poidsnn[i][1];
-      
-        if(poidsnn[i][2] > 1.0) poidsnn[i][2] = 2 - poidsnn[i][2];
-        if(poidsnn[i][2] < 0.0) poidsnn[i][2] = - poidsnn[i][2];
-
-        if(poidsnn[i][3] > 1.0) poidsnn[i][3] = 2 - poidsnn[i][3];
-        if(poidsnn[i][3] < 0.0) poidsnn[i][3] = - poidsnn[i][3];
-
-        if(poidsnn[i][4] > 1.0) poidsnn[i][4] = 2 - poidsnn[i][4];
-        if(poidsnn[i][4] < 0.0) poidsnn[i][4] = - poidsnn[i][4];
-
-        if(poidsnn[i][5] > 1.0) poidsnn[i][5] = 2 - poidsnn[i][5];
-        if(poidsnn[i][5] < 0.0) poidsnn[i][5] = - poidsnn[i][5];
-        
-        if(poidsnn[i][6] > 1.0) poidsnn[i][6] = 2 - poidsnn[i][6]; 
-        if(poidsnn[i][6] < 0.0) poidsnn[i][6] = - poidsnn[i][6];
-
-        if(poidsnn[i][7] > 1.0) poidsnn[i][7] = 2 - poidsnn[i][7];
-        if(poidsnn[i][7] < 0.0) poidsnn[i][7] = - poidsnn[i][7];  
+        for(int k=0;k<Nn;k++) {
+          poidsnn[i][k] += random->gaussian() * sqrt(2*dt*Dp);
+        }
+        for (int k=0;k<Nn;k++) {
+          if(poidsnn[i][k] > 1.0) poidsnn[i][k] = 2 - poidsnn[i][k];
+          if(poidsnn[i][k] < 0.0) poidsnn[i][k] = - poidsnn[i][k];
+        }
       }
     }
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
         if(region0->match(x[i][0], x[i][1], x[i][2])|| region1->match(x[i][0], x[i][1], x[i][2])) {
-          lightintensity[i] = 0.66;
+          lightintensity[i] = 0.9;
         } else {
-          lightintensity[i] = 0.33;
+          lightintensity[i] = 0.1;
         } 
         // Update reward
         qreward[i] += alphaq*(lightintensity[i] - qreward[i]) *dt;

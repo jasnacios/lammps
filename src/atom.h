@@ -76,6 +76,10 @@ class Atom : protected Pointers {
 
   double *rmass;
   double *q, **mu;
+  //new variables
+  double **poidsnn, *qreward, *lightintensity;
+  double *ang2D,*ztorque;
+  double *Dr, *Fa, *zeta;
 
   // finite-size particles
 
@@ -193,6 +197,11 @@ class Atom : protected Pointers {
 
   int molecule_flag, molindex_flag, molatom_flag;
   int q_flag, mu_flag;
+  //new variables
+  int poidsnn_flag, qreward_flag, lightintensity_flag;
+  int ang2D_flag, ztorque_flag;
+  int Dr_flag, Fa_flag, zeta_flag;
+  //
   int rmass_flag, radius_flag, omega_flag, torque_flag, angmom_flag, quat_flag;
   int temperature_flag, heatflow_flag;
   int vfrac_flag, spin_flag, eradius_flag, ervel_flag, erforce_flag;
