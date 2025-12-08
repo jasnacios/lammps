@@ -33,7 +33,7 @@ Fix(lmp, narg, arg)
   region0 = domain->get_region_by_id(arg[5]);
   idregion1 = utils::strdup(arg[6]);
   region1 = domain->get_region_by_id(arg[6]);
-  comm_radius = utils::numeric(FLERR,arg[7],false,lmp);
+  comm_radius2 = utils::numeric(FLERR,arg[7],false,lmp);
   alpha = utils::numeric(FLERR,arg[8],false,lmp);
   Nn = utils::numeric(FLERR,arg[9],false,lmp);
   seed = utils::numeric(FLERR,arg[10],false,lmp);
@@ -129,7 +129,7 @@ void FixRobotLearning::post_force(int vflag)
         rsq = delx * delx + dely * dely + delz * delz;
           
         if(rsq == 0) continue;
-        if (rsq < comm_radius) {
+        if (rsq < comm_radius2) {
           if (qreward[i] > qreward[j] ) {
               qreward[j] += alpha*(qreward[i] - qreward[j])*dt;
               for (int k = 0; k<Nn; k++) {

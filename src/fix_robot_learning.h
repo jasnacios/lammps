@@ -37,7 +37,7 @@ class FixRobotLearning : public Fix {
  char* idregion1;
  class Region *region1;
  double alpha;
- double comm_radius;
+ double comm_radius2;
  double dt;
 
 };
