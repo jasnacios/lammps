@@ -1,2 +1,3 @@
-https://github.com/lammps/lammps.git
-This repository provides an extension to LAMMPS (see above) where we implement social learning in a swarm of robots
+# Lammps Learning
+
+This repository provides an extension to the [LAMMPS repository](https://github.com/lammps/lammps.git) where we implement social learning in a swarm of robots
