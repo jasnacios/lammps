@@ -436,7 +436,7 @@ void Atom::peratom_create()
 
   add_peratom("qreward",&qreward,DOUBLE,0); 
   add_peratom("lightintensity",&lightintensity,DOUBLE,0);
-  add_peratom("poidsnn",&poidsnn,DOUBLE,100); 
+  add_peratom("poidsnn",&poidsnn,DOUBLE,200); 
 
   add_peratom("Dr",&Dr,DOUBLE,0);
   add_peratom("Fa",&Fa,DOUBLE,0);
@@ -3402,7 +3402,7 @@ int Atom::extract_size(const char *name, int type)
       if (strcmp(name,"v") == 0) return 3;
       if (strcmp(name,"f") == 0) return 3;
       if (strcmp(name,"mu") == 0) return 4;
-      if (strcmp(name,"poidsnn") == 0) return 100;
+      if (strcmp(name,"poidsnn") == 0) return 200;
       if (strcmp(name,"omega") == 0) return 3;
       if (strcmp(name,"angmom") == 0) return 3;
       if (strcmp(name,"torque") == 0) return 3;

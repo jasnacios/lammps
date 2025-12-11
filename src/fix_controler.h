@@ -27,11 +27,17 @@ class FixControler : public Fix {
 
  private:
  int nc;
+ int Nn;
+ int h;
  inline double sigmoid(double x) {
   return 1.0 / (1.0 + std::exp(-x));
 }
  inline double f_slope(double S){ return std::pow(4.0*S, 4.0); }
  inline double th_trun(double x){return 0.5*(1 + std::tanh(11.5*(x-0.39)));}
+ inline double Leaky_Relu(double x){
+   if (x<0){ return 0.1*x;}
+   else {return x;}
+ }
 };
 
 }

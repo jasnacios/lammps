@@ -9,6 +9,7 @@
 #include "atom.h"
 #include "update.h"
 #include "error.h"
+#include <span>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -21,6 +22,9 @@ FixControler::FixControler(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4) error->all(FLERR,"Illegal fix /active/force command");
 
   nc = utils::numeric(FLERR,arg[3],false,lmp);
+  Nn = utils::numeric(FLERR,arg[4],false,lmp);
+  h = utils::numeric(FLERR,arg[5],false,lmp);
+
 
 }
 
@@ -54,7 +58,7 @@ void FixControler::post_force(int vflag)
   double *ztorque = atom->ztorque;
   double *zeta = atom->zeta;
   double **poidsnn = atom->poidsnn;
-  double *w = new double[8];
+
 
 
   int *mask = atom->mask;    
@@ -63,9 +67,7 @@ void FixControler::post_force(int vflag)
   
   for (int i = 0; i < nlocal; i++) {
     double I = lightintensity[i];
-    for (int k= 0; k<8; k++){
-      w[k] = poidsnn[i][k];
-    }
+    double *w = poidsnn[i];
 
     double slope;
     double sigm;
@@ -119,6 +121,51 @@ void FixControler::post_force(int vflag)
         Fa[i] = th_trun(PWM);
         ztorque[i] = 0.5*(Fd - Fg);
       } 
+    }
+    if (nc ==5){
+      int index = 0;
+      double layer_1[h];
+      double layer_2[h];
+      double layer_out[2];
+      if (mask[i]& groupbit){
+        for (int l = 0; l<h; l++){
+          double Wl1 = w[index++]; // les poids paires correspondent aux w
+          double b1l = w[index++]; // Les poids impaires correspondent aux seuil 
+          double x1l =  Wl1*I +b1l; // on récupère les valeurs des premiers neurones en appliquant W*I  +b (W dans M_{h,1}, b dans R^{h))
+          layer_1[l] = Leaky_Relu(x1l); // on applique la fonction d'activation
+        }
+
+        for (int l = 0; l<h; l++){
+          double x2l = 0;
+          for (int c=0; c<h; c++){
+            double W2lc = w[index++];
+            x2l += W2lc*layer_1[c]; 
+          }
+          x2l += w[index++];
+          layer_2[l] = Leaky_Relu(x2l);
+        }
+        for (int l=0; l<2; l++){
+          double x_out_l = 0;
+          for (int c=0; c<h;c++){
+            double W_out_lc = w[index++];
+            x_out_l += W_out_lc*layer_2[c];
+          }
+          x_out_l += w[index++];
+          if (l==0){
+            layer_out[l] = sigmoid(x_out_l);
+          }
+          if (l==1){
+            layer_out[l] = std::tanh(x_out_l);
+          }
+          
+        }
+        double f_d= layer_out[0];
+        double f_g = layer_out[1];
+
+        Fa[i] = (f_d+f_g)/2;
+        ztorque[i] = (f_d - f_g)/2;
+        
+      }
     }
   }
 }
